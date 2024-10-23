@@ -1,0 +1,14 @@
+CREATE OR REPLACE FUNCTION verificar_medico_unico() 
+RETURNS TRIGGER AS $$
+BEGIN
+  IF (SELECT COUNT(*) FROM Paciente WHERE run = NEW.run AND runmedico IS NOT NULL) > 0 THEN
+    RAISE EXCEPTION 'El paciente ya tiene un médico asignado.';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_verificar_medico_unico
+BEFORE INSERT OR UPDATE ON Paciente
+FOR EACH ROW
+EXECUTE FUNCTION verificar_medico_unico();
