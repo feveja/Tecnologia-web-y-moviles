@@ -4,6 +4,13 @@
 		<link rel="stylesheet" type="text/CSS" href="../../css/home.css"/>
 		<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 		<title>Consultas: admin</title>
+
+		<!-- php -->
+		<?php
+			include_once("../../php/conectar.php");
+			$consulta = pg_exec("select * from consulta4()") or die("Consulta fallida");
+		?>
+		
 	</head>
 	<body>
 		<img src="../../images/logo.png" class="logo">
@@ -62,42 +69,27 @@
 			</li>
 			<li id="elementosmenu"><a href="../../home-admin-ofertas.html"><span class="material-symbols-outlined"> paid</span>Modificar ofertas</a></li>
 			<li id="elementosmenu"><a href="../../home-admin-consultas.html"><span class="material-symbols-outlined">assignment_late</span>Consultas</a></li>
-            <li id="elementosmenu"><a href="home-modelorelacional.html"><span class="material-symbols-outlined">database</span>Modelo relacional</a></li>
+            <li id="elementosmenu"><a href="../../home-modelorelacional.html"><span class="material-symbols-outlined">database</span>Modelo relacional</a></li>
             <li id="elementosmenu"><a href="../../login.html"><span class="material-symbols-outlined">logout</span>Cerrar sesion</a> </li>
             
         </ul>
 	<div id="contenido">
 		<h3>Resultados consulta</h3>
-        <table>
-            <tr>
-                <th>
-                    H1
-                </th>
-                <th>
-                    H2
-                </th>
-                <th>
-                    H3
-                </th>
-                <th>
-                    H4
-                </th>
-            </tr>
-            <tr>
-                <td>
-                    Contenido
-                </td>
-                <td>
-                    Contenido
-                </td>
-                <td>
-                    Contenido
-                </td>
-                <td>
-                    Contenido
-                </td>
-            </tr>
-        </table>
+		<table>
+			<tr>
+				<th>Nombre supervisor</th><th>Nombre farmacia</th><th>Nombre empresa farmaceutica</th><th>Cantidad de veces supervisado</th>
+			</tr>
+			<?php 
+				while ($contenido = pg_fetch_assoc($consulta)){
+					echo "<tr> 
+						<td>".ucfirst($contenido['nombre_supervisor'])."</td>
+						<td>".ucwords($contenido['nombre_farmacia'])."</td>
+						<td>".ucwords($contenido['nombre_empresa_farmaceutica'])."</td>
+						<td>".$contenido['veces_supervisado']."</td>
+						</tr>";
+				}
+			?>
+		</table>
 	</div>
 	</body>
 
