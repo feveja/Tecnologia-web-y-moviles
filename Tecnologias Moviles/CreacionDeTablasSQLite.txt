@@ -1,0 +1,305 @@
+-- Tabla Dirección
+CREATE TABLE Direccion (
+    CodigoPostal INTEGER PRIMARY KEY,
+    Calle VARCHAR(255),
+    Numero INTEGER,
+    Comuna VARCHAR(255)
+);
+
+-- Tabla DatosContacto
+CREATE TABLE DatosContacto (
+    CodigoTelefono INTEGER PRIMARY KEY,
+    Telefono BIGINT,
+    Correo VARCHAR(255)
+);
+
+-- Tabla Prevision
+CREATE TABLE Prevision (
+    ID INTEGER PRIMARY KEY,
+    Nombre VARCHAR(20),
+    Tipo VARCHAR(20)
+);
+
+-- Tabla Paciente
+CREATE TABLE Paciente (
+    RUN VARCHAR(10) PRIMARY KEY,
+    FechaNacimiento DATE,
+    Nombre VARCHAR(20),
+    Apellido VARCHAR(20),
+    FechaUltimoCargo DATE,
+    FechaPrimeraAtencion DATE,
+    IDPrevision INTEGER,
+    FOREIGN KEY (IDPrevision) REFERENCES Prevision(ID)
+);
+
+-- Tabla Tiene (relación entre Paciente y Direccion/DatosContacto)
+CREATE TABLE Tiene (
+    RUNPaciente VARCHAR(10),
+    CodigoTelefono INTEGER,
+    CodigoDireccion INTEGER,
+    PRIMARY KEY (RUNPaciente, CodigoTelefono, CodigoDireccion),
+    FOREIGN KEY (RUNPaciente) REFERENCES Paciente(RUN),
+    FOREIGN KEY (CodigoTelefono) REFERENCES DatosContacto(CodigoTelefono),
+    FOREIGN KEY (CodigoDireccion) REFERENCES Direccion(CodigoPostal)
+);
+
+-- Tabla Medico
+CREATE TABLE Medico (
+    RUN VARCHAR(10) PRIMARY KEY,
+    FechaNacimiento DATE,
+    Nombre VARCHAR(20),
+    Apellido VARCHAR(20)
+);
+
+-- Tabla Especialidad
+CREATE TABLE Especialidad (
+    Nombre VARCHAR(255) PRIMARY KEY
+);
+
+-- Tabla Posee (relación entre Medico y Especialidad)
+CREATE TABLE Posee (
+    RUNMedico VARCHAR(10),
+    NombreEspecialidad VARCHAR(255),
+    PRIMARY KEY (RUNMedico, NombreEspecialidad),
+    FOREIGN KEY (RUNMedico) REFERENCES Medico(RUN),
+    FOREIGN KEY (NombreEspecialidad) REFERENCES Especialidad(Nombre)
+);
+
+-- Tabla Atender (relación entre Paciente y Medico)
+CREATE TABLE Atender (
+    Paciente_id VARCHAR(10),
+    Medico_id VARCHAR(10),
+    FechaInicio DATE,
+    FechaFin DATE,
+    PRIMARY KEY (Paciente_id, Medico_id),
+    FOREIGN KEY (Paciente_id) REFERENCES Paciente(RUN),
+    FOREIGN KEY (Medico_id) REFERENCES Medico(RUN)
+);
+
+-- Tabla Receta
+CREATE TABLE Receta (
+    Codigo INTEGER PRIMARY KEY,
+    Fecha DATE,
+    Texto VARCHAR(255),
+    RUNPaciente VARCHAR(10),
+    RUNMedico VARCHAR(10),
+    FOREIGN KEY (RUNPaciente) REFERENCES Paciente(RUN),
+    FOREIGN KEY (RUNMedico) REFERENCES Medico(RUN)
+);
+
+-- Tabla Comprar (relación entre Paciente y Medicamento)
+CREATE TABLE Comprar (
+    RUNPaciente VARCHAR(10),
+    NombreComMed VARCHAR(30),
+    PRIMARY KEY (RUNPaciente, NombreComMed),
+    FOREIGN KEY (RUNPaciente) REFERENCES Paciente(RUN),
+    FOREIGN KEY (NombreComMed) REFERENCES Medicamento(NombreComercial)
+);
+
+-- Tabla Medicamento
+CREATE TABLE Medicamento (
+    NombreComercial VARCHAR(30) PRIMARY KEY,
+    Formula VARCHAR(255)
+);
+
+-- Tabla Contiene (relación entre Receta y Medicamento)
+CREATE TABLE Contiene (
+    CodigoReceta INTEGER,
+    NombreComMed VARCHAR(30),
+    PRIMARY KEY (CodigoReceta, NombreComMed),
+    FOREIGN KEY (CodigoReceta) REFERENCES Receta(Codigo),
+    FOREIGN KEY (NombreComMed) REFERENCES Medicamento(NombreComercial)
+);
+
+-- Tabla EmpresaFarmaceutica
+CREATE TABLE EmpresaFarmaceutica (
+    Codigo INTEGER PRIMARY KEY,
+    Nombre VARCHAR(255),
+    Telefono BIGINT
+);
+
+-- Tabla Ofrecer (relación entre EmpresaFarmaceutica y Medicamento)
+CREATE TABLE Ofrecer (
+    CodigoFarmaceutica INTEGER,
+    NombreComMed VARCHAR(30),
+    PRIMARY KEY (CodigoFarmaceutica, NombreComMed),
+    FOREIGN KEY (CodigoFarmaceutica) REFERENCES EmpresaFarmaceutica(Codigo),
+    FOREIGN KEY (NombreComMed) REFERENCES Medicamento(NombreComercial)
+);
+
+-- Tabla Farmacia
+CREATE TABLE Farmacia (
+    Codigo INTEGER PRIMARY KEY,
+    Nombre VARCHAR(100),
+    Telefono BIGINT,
+    Direccion VARCHAR(255)
+);
+
+-- Tabla ExisteEn (relación entre Medicamento y Farmacia)
+CREATE TABLE ExisteEn (
+    NombreComMed VARCHAR(30),
+    CodigoFarmacia INTEGER,
+    PrecioMed INTEGER,
+    CantidadMed INTEGER,
+    FechaIngreso DATE,
+    PrecioOriginal INTEGER,
+    FechaFinOferta DATE,
+    PRIMARY KEY (NombreComMed, CodigoFarmacia),
+    FOREIGN KEY (NombreComMed) REFERENCES Medicamento(NombreComercial),
+    FOREIGN KEY (CodigoFarmacia) REFERENCES Farmacia(Codigo)
+);
+
+-- Tabla Supervisor
+CREATE TABLE Supervisor (
+    RUN VARCHAR(10) PRIMARY KEY,
+    Nombre VARCHAR(20),
+    FechaIngreso DATE
+);
+
+-- Tabla Contrato
+CREATE TABLE Contrato (
+    CodigoContrato INTEGER PRIMARY KEY,
+    FechaInicio DATE,
+    FechaTermino DATE,
+    ContenidoContrato TEXT,
+    CodigoFarmaceutica INTEGER,
+    CodigoFarmacia INTEGER,
+    RUNSupervisor VARCHAR(10),
+    FOREIGN KEY (CodigoFarmaceutica) REFERENCES EmpresaFarmaceutica(Codigo),
+    FOREIGN KEY (CodigoFarmacia) REFERENCES Farmacia(Codigo),
+    FOREIGN KEY (RUNSupervisor) REFERENCES Supervisor(RUN)
+);
+
+-- Tabla FechaSup (relación entre Supervisor y Prevision)
+CREATE TABLE FechaSup (
+    RUNSupervisor VARCHAR(10),
+    IDPrevision INTEGER,
+    FechaInicio DATE,
+    FechaFin DATE,
+    PRIMARY KEY (RUNSupervisor, IDPrevision),
+    FOREIGN KEY (RUNSupervisor) REFERENCES Supervisor(RUN),
+    FOREIGN KEY (IDPrevision) REFERENCES Prevision(ID)
+);
+
+-- Datos para Dirección
+INSERT INTO Direccion (CodigoPostal, Calle, Numero, Comuna) VALUES
+(1001, 'Calle Los Olivos', 123, 'Santiago'),
+(1002, 'Avenida del Sol', 456, 'Viña del Mar'),
+(1003, 'Pasaje La Luna', 789, 'Concepción');
+
+-- Datos para DatosContacto
+INSERT INTO DatosContacto (CodigoTelefono, Telefono, Correo) VALUES
+(1, 987654321, 'paciente1@mail.com'),
+(2, 987654322, 'paciente2@mail.com'),
+(3, 987654323, 'paciente3@mail.com');
+
+-- Datos para Prevision
+INSERT INTO Prevision (ID, Nombre, Tipo) VALUES
+(1, 'Fonasa', 'A'),
+(2, 'Isapre', 'B'),
+(3, 'Particular', 'C');
+
+-- Datos para Paciente
+INSERT INTO Paciente (RUN, FechaNacimiento, Nombre, Apellido, FechaUltimoCargo, FechaPrimeraAtencion, IDPrevision) VALUES
+('11111111-1', '1990-01-01', 'Juan', 'Pérez', '2024-01-15', '2023-01-10', 1),
+('22222222-2', '1985-05-15', 'María', 'Gómez', '2024-02-01', '2023-05-20', 2),
+('33333333-3', '2000-10-20', 'Pedro', 'López', '2024-01-30', '2023-11-05', 3);
+
+-- Datos para Tiene
+INSERT INTO Tiene (RUNPaciente, CodigoTelefono, CodigoDireccion) VALUES
+('11111111-1', 1, 1001),
+('22222222-2', 2, 1002),
+('33333333-3', 3, 1003);
+
+-- Datos para Medico
+INSERT INTO Medico (RUN, FechaNacimiento, Nombre, Apellido) VALUES
+('44444444-4', '1980-08-12', 'Carlos', 'Martínez'),
+('55555555-5', '1975-03-08', 'Ana', 'Ríos'),
+('66666666-6', '1992-12-02', 'Luis', 'Sánchez');
+
+-- Datos para Especialidad
+INSERT INTO Especialidad (Nombre) VALUES
+('Cardiología'),
+('Pediatría'),
+('Neurología');
+
+-- Datos para Posee
+INSERT INTO Posee (RUNMedico, NombreEspecialidad) VALUES
+('44444444-4', 'Cardiología'),
+('55555555-5', 'Pediatría'),
+('66666666-6', 'Neurología');
+
+-- Datos para Atender
+INSERT INTO Atender (Paciente_id, Medico_id, FechaInicio, FechaFin) VALUES
+('11111111-1', '44444444-4', '2023-03-15', '2023-06-15'),
+('22222222-2', '55555555-5', '2023-07-01', '2023-09-01'),
+('33333333-3', '66666666-6', '2023-11-20', '2024-01-20');
+
+-- Datos para Receta
+INSERT INTO Receta (Codigo, Fecha, Texto, RUNPaciente, RUNMedico) VALUES
+(1, '2023-03-16', 'Tomar 1 comprimido diario', '11111111-1', '44444444-4'),
+(2, '2023-07-02', 'Aplicar crema cada 12 horas', '22222222-2', '55555555-5'),
+(3, '2023-11-21', 'Tomar 2 cápsulas después de comer', '33333333-3', '66666666-6');
+
+-- Datos para Medicamento
+INSERT INTO Medicamento (NombreComercial, Formula) VALUES
+('Paracetamol', 'C8H9NO2'),
+('Ibuprofeno', 'C13H18O2'),
+('Amoxicilina', 'C16H19N3O5S');
+
+-- Datos para Contiene
+INSERT INTO Contiene (CodigoReceta, NombreComMed) VALUES
+(1, 'Paracetamol'),
+(2, 'Ibuprofeno'),
+(3, 'Amoxicilina');
+
+-- Datos para EmpresaFarmaceutica
+INSERT INTO EmpresaFarmaceutica (Codigo, Nombre, Telefono) VALUES
+(1, 'Laboratorios Chile', 987654321),
+(2, 'Farmaceutica Nacional', 987654322),
+(3, 'GlobalMed', 987654323);
+
+-- Datos para Ofrecer
+INSERT INTO Ofrecer (CodigoFarmaceutica, NombreComMed) VALUES
+(1, 'Paracetamol'),
+(2, 'Ibuprofeno'),
+(3, 'Amoxicilina');
+
+-- Datos para Farmacia
+INSERT INTO Farmacia (Codigo, Nombre, Telefono, Direccion) VALUES
+(1, 'Farmacia Central', 987654321, 'Santiago Centro'),
+(2, 'Farmacia del Norte', 987654322, 'Antofagasta'),
+(3, 'Farmacia del Sur', 987654323, 'Puerto Montt');
+
+-- Datos para ExisteEn
+INSERT INTO ExisteEn (NombreComMed, CodigoFarmacia, PrecioMed, CantidadMed, FechaIngreso, PrecioOriginal, FechaFinOferta) VALUES
+('Paracetamol', 1, 500, 100, '2023-01-01', 600, '2024-01-01'),
+('Ibuprofeno', 2, 800, 50, '2023-06-01', 900, '2024-06-01'),
+('Amoxicilina', 3, 1200, 30, '2023-11-01', 1500, '2024-11-01');
+
+-- Datos para Supervisor
+INSERT INTO Supervisor (RUN, Nombre, FechaIngreso) VALUES
+('77777777-7', 'Claudia Pérez', '2023-01-01'),
+('88888888-8', 'Ricardo Díaz', '2023-06-01'),
+('99999999-9', 'Valeria Silva', '2023-11-01');
+
+-- Datos para Contrato
+INSERT INTO Contrato (CodigoContrato, FechaInicio, FechaTermino, ContenidoContrato, CodigoFarmaceutica, CodigoFarmacia, RUNSupervisor) VALUES
+(1, '2023-01-01', '2023-12-31', 'Contrato anual', 1, 1, '77777777-7'),
+(2, '2023-06-01', '2024-05-31', 'Contrato especial', 2, 2, '88888888-8'),
+(3, '2023-11-01', '2024-10-31', 'Contrato a prueba', 3, 3, '99999999-9');
+
+-- Datos para FechaSup
+INSERT INTO FechaSup (RUNSupervisor, IDPrevision, FechaInicio, FechaFin) VALUES
+('77777777-7', 1, '2023-01-01', '2024-01-01'),
+('88888888-8', 2, '2023-06-01', '2024-06-01'),
+('99999999-9', 3, '2023-11-01', '2024-11-01');
+
+-- Datos para la tabla Comprar
+INSERT INTO Comprar (RUNPaciente, NombreComMed) VALUES
+('11111111-1', 'Paracetamol'),
+('22222222-2', 'Ibuprofeno'),
+('33333333-3', 'Amoxicilina'),
+('11111111-1', 'Ibuprofeno'),
+('22222222-2', 'Paracetamol');
+
