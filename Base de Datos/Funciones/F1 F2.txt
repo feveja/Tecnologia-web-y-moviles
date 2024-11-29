@@ -1,0 +1,39 @@
+CREATE OR REPLACE FUNCTION PonerOferta(
+    o_nombre_comercial VARCHAR(30),
+    o_precio_oferta INTEGER,
+    o_fecha_inicio DATE,
+    o_fecha_fin DATE
+) 
+RETURNS VOID AS $$
+BEGIN
+    -- Verificar si el medicamento existe
+    IF NOT EXISTS (SELECT 1 FROM Medicamento WHERE NombreComercial = o_nombre_comercial) THEN
+        RAISE EXCEPTION 'El medicamento % no existe', o_nombre_comercial;
+    END IF;
+
+    -- Actualizar el precio en la tabla ExisteEn
+    UPDATE ExisteEn
+    SET PrecioOriginal = PrecioMed,       -- Guardar el precio original antes de la oferta
+        PrecioMed = o_precio_oferta,      -- Asignar el precio de oferta
+        FechaInicioOferta = o_fecha_inicio,
+        FechaFinOferta = o_fecha_fin      
+    WHERE NombreComerMed = o_nombre_comercial; 
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION RevertirOferta(
+    o_nombre_comercial VARCHAR(30)
+) 
+RETURNS VOID AS $$
+BEGIN
+    -- Revertir el precio si la oferta ha terminado
+    UPDATE ExisteEn
+    SET PrecioMed = PrecioOriginal,       -- Revertir al precio original
+        PrecioOriginal = NULL,            -- Limpiar el precio original
+        FechaInicioOferta = NULL,         -- Limpiar las fechas de oferta
+        FechaFinOferta = NULL            
+    WHERE NombreComerMed = o_nombre_comercial;  -- Verificar si la fecha de fin ha pasado
+END;
+$$
+LANGUAGE plpgsql;
