@@ -1,0 +1,26 @@
+-- SI UN SUPERSVISOR ESTA SUPERVISANDO MAS DE UN CONTRATO AL MISMO TIEMPO, QUIERE DECIR QUE SU RUT APARECE
+-- MAS DE UNA VEZ EN LA TABLA CONTRATO, Y ADEMAS LA FECHA DE TERMINO DE CADA FILA QUE CONTIENE SU RUT ES MENOR A LA FECHA ACTUAL
+-- ENTONCES GENERAR UNA EXCEPCION CUANDO SE CUMPLAN ESTAS DOS CONDICIONES
+
+CREATE OR REPLACE FUNCTION unicosupervisor() RETURNS TRIGGER AS
+$$
+    DECLARE
+        rec RECORD;
+        contador INTEGER;
+    BEGIN
+        contador := (SELECT COUNT(*) FROM contrato WHERE runsupervisor=NEW.runsupervisor);
+        IF contador > 1 THEN
+            FOR rec IN (SELECT * FROM contrato WHERE runsupervisor=NEW.runsupervisor) LOOP
+                IF rec.fechatermino > CURRENT_DATE THEN
+                    RAISE EXCEPTION 'Solo puede haber un supervisor por contrato';
+                END IF;
+            END LOOP;
+        END IF;
+        RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER unicosupervisorporcontrato
+BEFORE INSERT OR UPDATE ON contrato
+FOR EACH ROW
+EXECUTE FUNCTION unicosupervisor();

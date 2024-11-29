@@ -1,0 +1,907 @@
+--- FUNCIONES PARA INTERACTUAR CON LAS TABLAS PACIENTE, DIRECCION, TELEFONO
+--- TIENE.
+
+--- INSERTA DATOS EN LA TABLA PACIENTE, DIRECCION, TELEFONO
+CREATE OR REPLACE FUNCTION Insertar_Paciente
+(paciente.run%type,
+ paciente.fechanacimiento%type,
+ paciente.correo%type,
+ paciente.nombre%type,
+ paciente.apellido%type,
+ paciente.fechainicioacargo%type,
+ paciente.fechaterminoacargo%type,
+ paciente.nombreprevision%type,
+ paciente.runmedico%type,
+ telefono.codigo%type,
+ telefono.numero%type,
+ direccion.codigopostal%type,
+ direccion.calle%type,
+ direccion.numero%type,
+ direccion.comuna%type
+ )
+RETURNS VOID AS
+$$
+BEGIN
+	INSERT INTO paciente
+  (run,
+   fechanacimiento,
+   correo,
+   nombre,
+   apellido,
+   fechainicioacargo,
+   fechaterminoacargo,
+   nombreprevision,
+   runmedico) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9);
+   
+  IF NOT EXISTS(SELECT codigo FROM telefono WHERE telefono.codigo=$10) THEN
+  	INSERT INTO telefono
+  	(codigo,
+   	 numero) VALUES ($10,$11);
+  END IF;
+  
+  IF NOT EXISTS(SELECT codigopostal FROM direccion WHERE direccion.codigopostal=$12) THEN
+  	INSERT INTO direccion
+  	(codigopostal,
+   	 calle,
+   	 numero,
+   	 comuna) VALUES ($12,$13,$14,$15);
+  END IF;
+  
+  INSERT INTO tiene
+  (runpaciente,
+   codigotelefono,
+   codigodireccion) VALUES ($1,$10,$12);
+END;
+$$ LANGUAGE PLPGSQL;
+
+--- PERMITE BORRAR PACIENTES DADO SU RUT
+CREATE OR REPLACE FUNCTION Borrar_Paciente
+(paciente.run%type)
+RETURNS VOID AS
+$$
+BEGIN
+	DELETE FROM paciente WHERE paciente.run=$1;
+END;
+$$ LANGUAGE PLPGSQL;
+
+
+---MUESTRA TODOS LOS PACIENTES 
+
+CREATE OR REPLACE FUNCTION Mostrar_Pacientes
+(OUT run paciente.run%type,
+ OUT fechanacimiento paciente.fechanacimiento%type,
+ OUT correo paciente.correo%type,
+ OUT nombre paciente.nombre%type,
+ OUT apellido paciente.apellido%type,
+ OUT fechainicioacargo paciente.fechainicioacargo%type,
+ OUT fechaterminoacargo paciente.fechaterminoacargo%type,
+ OUT nombreprevision paciente.nombreprevision%type,
+ OUT runmedico paciente.runmedico%type,
+ OUT codigo_telefono telefono.codigo%type,
+ OUT numero_telefono telefono.numero%type,
+ OUT codigopostal_direccion direccion.codigopostal%type,
+ OUT calle_direccion direccion.calle%type,
+ OUT numero_direccion direccion.numero%type,
+ OUT comuna_direccion direccion.comuna%type
+)
+RETURNS setof RECORD AS
+$$
+BEGIN
+  RETURN QUERY select 
+  	paciente.run,
+  	paciente.fechanacimiento,
+  	paciente.correo,
+  	paciente.nombre,
+  	paciente.apellido,
+  	paciente.fechainicioacargo,
+  	paciente.fechaterminoacargo,
+  	paciente.nombreprevision,
+  	paciente.runmedico,
+  	telefono.codigo,
+  	telefono.numero,
+  	direccion.codigopostal,
+  	direccion.calle,
+  	direccion.numero,
+  	direccion.comuna
+  	from paciente, telefono, direccion, tiene where paciente.run=tiene.runpaciente and tiene.codigotelefono=telefono.codigo and tiene.codigodireccion=direccion.codigopostal;
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--- PERMITE ENCONTRAR UN PACIENTE DADO SU RUT
+CREATE OR REPLACE FUNCTION Buscar_Paciente
+(IN run_pasado paciente.run%type,
+ OUT run paciente.run%type,
+ OUT fechanacimiento paciente.fechanacimiento%type,
+ OUT correo paciente.correo%type,
+ OUT nombre paciente.nombre%type,
+ OUT apellido paciente.apellido%type,
+ OUT fechainicioacargo paciente.fechainicioacargo%type,
+ OUT fechaterminoacargo paciente.fechaterminoacargo%type,
+ OUT nombreprevision paciente.nombreprevision%type,
+ OUT runmedico paciente.runmedico%type,
+ OUT codigo_telefono telefono.codigo%type,
+ OUT numero_telefono telefono.numero%type,
+ OUT codigopostal_direccion direccion.codigopostal%type,
+ OUT calle_direccion direccion.calle%type,
+ OUT numero_direccion direccion.numero%type,
+ OUT comuna_direccion direccion.comuna%type
+)
+RETURNS setof RECORD AS
+$$
+BEGIN
+  RETURN QUERY select 
+  	paciente.run,
+  	paciente.fechanacimiento,
+  	paciente.correo,
+  	paciente.nombre,
+  	paciente.apellido,
+  	paciente.fechainicioacargo,
+  	paciente.fechaterminoacargo,
+  	paciente.nombreprevision,
+  	paciente.runmedico,
+  	telefono.codigo,
+  	telefono.numero,
+  	direccion.codigopostal,
+  	direccion.calle,
+  	direccion.numero,
+  	direccion.comuna
+  	from paciente, telefono, direccion, tiene where run_pasado= paciente.run and paciente.run=tiene.runpaciente and tiene.codigotelefono=telefono.codigo and tiene.codigodireccion=direccion.codigopostal;
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--- FUNCIONES PARA INGRESAR DATOS EN TABLAS RECETA Y CONTIENE
+--- PERMITE AGREGAR MEDICAMENTOS A LA RECETA YA CREADA
+CREATE OR REPLACE FUNCTION Insertar_Receta
+(receta.codigo%type,
+ receta.fecha%type,
+ receta.texto%type,
+ receta.runpaciente%type,
+ receta.runmedico%type,
+ contiene.nombrecomermed%type)
+RETURNS VOID AS
+$$
+BEGIN
+	IF NOT EXISTS(SELECT codigo FROM receta where $1=receta.codigo) THEN
+  	INSERT INTO receta
+    (codigo,
+     fecha,
+     texto,
+     runpaciente,
+     runmedico) VALUES ($1,$2,$3,$4,$5);
+    INSERT INTO contiene
+    (codigoreceta,
+     nombrecomermed) VALUES ($1,$6);
+  ELSE 
+  	INSERT INTO contiene
+    (codigoreceta,
+     nombrecomermed) VALUES ($1,$6);
+  END IF;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---permite borrar recetas
+
+CREATE OR REPLACE FUNCTION Borrar_Receta
+(receta.codigo%type)
+RETURNS VOID AS
+$$
+BEGIN
+	DELETE FROM receta WHERE receta.codigo=$1;
+  DELETE FROM contiene WHERE contiene.codigoreceta=$1;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE MOSTRAR TODAS LAS RECETAS
+
+CREATE OR REPLACE FUNCTION Mostrar_Receta
+(OUT codigo receta.codigo%type,
+ OUT fecha receta.fecha%type,
+ OUT texto receta.texto%type,
+ OUT runpaciente receta.runpaciente%type,
+ OUT runmedico receta.runmedico%type,
+ OUT nombrecomermed contiene.nombrecomermed%type)
+RETURNS setof RECORD AS
+$$
+BEGIN
+	RETURN QUERY select 
+  	receta.codigo,
+ 		receta.fecha,
+ 		receta.texto,
+ 		receta.runpaciente,
+ 		receta.runmedico,
+ 		contiene.nombrecomermed
+    from receta, contiene where receta.codigo=contiene.codigoreceta;
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--- PERMITE BUSCAR RECETAS
+CREATE OR REPLACE FUNCTION Buscar_Receta
+(IN codigo_pasado receta.codigo%type,
+ OUT codigo receta.codigo%type,
+ OUT fecha receta.fecha%type,
+ OUT texto receta.texto%type,
+ OUT runpaciente receta.runpaciente%type,
+ OUT runmedico receta.runmedico%type,
+ OUT nombrecomermed contiene.nombrecomermed%type)
+RETURNS setof RECORD AS
+$$
+BEGIN
+	RETURN QUERY select 
+  	receta.codigo,
+ 		receta.fecha,
+ 		receta.texto,
+ 		receta.runpaciente,
+ 		receta.runmedico,
+ 		contiene.nombrecomermed
+    from receta, contiene where receta.codigo=contiene.codigoreceta and codigo_pasado=receta.codigo;
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---FUNCIONES PARA INTERACTUAR CON LAS TABLAS MEDICO, POSEE Y ESPECIALIDAD
+--- PERMITE INSERTAR UN MEDICO, SI EL MEDICO EXISTE PERMITE INSERTAR ESPECIALIDADES 
+CREATE OR REPLACE FUNCTION Insertar_Medico
+(medico.run%type,
+ medico.fechanacimiento%type,
+ medico.aniosejerciendo%type,
+ medico.nombre%type,
+ medico.apellido%type,
+ especialidad.nombre%type)
+RETURNS VOID AS
+$$
+BEGIN
+ IF NOT EXISTS(SELECT run FROM medico WHERE medico.run=$1) THEN
+ 	INSERT INTO medico
+  (run,
+   fechanacimiento,
+   aniosejerciendo,
+   nombre,
+   apellido) VALUES ($1,$2,$3,$4,$5);
+ END IF;
+ 
+ IF NOT EXISTS(SELECT nombre FROM especialidad WHERE especialidad.nombre=$6) THEN
+ 	INSERT INTO especialidad
+ 	(nombre) VALUES ($6);
+ END IF;
+ 
+ INSERT INTO posee
+ (runmedico,
+ 	nombreespecialidad) VALUES ($1,$6);
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--- PERMITE INGRESAR UNA NUEVA ESPECIALIDAD
+CREATE OR REPLACE FUNCTION Insertar_Especialidad
+	(especialidad.nombre%type)
+	RETURNS VOID AS
+$$
+BEGIN
+	INSERT INTO especialidad
+  (nombre) VALUES ($1);
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE BORRAR UNA ESPECIALIDAD
+CREATE OR REPLACE FUNCTION Borrar_Especialidad
+	(especialidad.nombre%type)
+  RETURNS VOID AS
+$$
+BEGIN
+	DELETE FROM especialidad WHERE especialidad.nombre=$1;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE BORRAR UN MEDICO, NO BORRA ESPECIALIDADES POR SI OTRO MEDICO LAS TIENE
+CREATE OR REPLACE FUNCTION Borrar_Medico
+	(medico.run%type)
+RETURNS VOID AS
+$$
+BEGIN
+	DELETE FROM posee WHERE posee.runmedico=$1;
+	DELETE FROM medico WHERE medico.run=$1;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE VER LOS MEDICOS Y SUS ESPECIALIDADES
+CREATE OR REPLACE FUNCTION Mostrar_Medicos
+	(OUT run medico.run%type,
+   OUT fechanacimiento medico.fechanacimiento%type,
+   OUT aniosejerciendo medico.aniosejerciendo%type,
+   OUT nombre medico.nombre%type,
+   OUT apellido medico.apellido%type,
+   OUT nombre_especialidad especialidad.nombre%type)
+RETURNS setof RECORD AS
+$$
+BEGIN
+	RETURN QUERY (select medico.run,
+                medico.fechanacimiento,
+                medico.aniosejerciendo,
+                medico.nombre,
+                medico.apellido,
+                posee.nombreespecialidad
+                from medico, posee where medico.run=posee.runmedico);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+
+---PERMITE VER LAS ESPECIALIDADES
+CREATE OR REPLACE FUNCTION Mostrar_Especialidades()
+RETURNS setof especialidad.nombre%type AS
+$$
+BEGIN
+	RETURN QUERY (SELECT nombre FROM especialidad);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE BUSCAR UN MEDICO EN ESPECIFICO
+CREATE OR REPLACE FUNCTION Buscar_Medico
+	(IN run_pasado medico.run%type,
+   OUT run medico.run%type,
+   OUT fechanacimiento medico.fechanacimiento%type,
+   OUT aniosejerciendo medico.aniosejerciendo%type,
+   OUT nombre medico.nombre%type,
+   OUT apellido medico.apellido%type,
+   OUT nombre_especialidad especialidad.nombre%type)
+RETURNS setof RECORD AS
+$$
+BEGIN
+	RETURN QUERY (select medico.run,
+                medico.fechanacimiento,
+                medico.aniosejerciendo,
+                medico.nombre,
+                medico.apellido,
+                posee.nombreespecialidad
+                from medico, posee where medico.run=posee.runmedico and medico.run=run_pasado);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--- FUNCION QUE INTERACTUA CON LA TABLA COMPRAR
+--- PERMITE INSERTAR DATOS EN LA TABLA COMPRAR
+CREATE OR REPLACE FUNCTION Insertar_Comprar
+(comprar.runpaciente%type,
+ comprar.nombrecomermed%type)
+RETURNS VOID AS
+$$
+BEGIN
+	INSERT INTO comprar
+  (runpaciente,
+   nombrecomermed) VALUES ($1,$2);
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE BORRAR DE LA TABLA COMPRAR
+CREATE OR REPLACE FUNCTION Borrar_Comprar
+(comprar.runpaciente%type,
+ comprar.nombrecomermed%type)
+RETURNS VOID AS
+$$
+BEGIN
+	DELETE FROM comprar WHERE comprar.runpaciente=$1 and comprar.nombrecomermed=$2;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE VISUALIZAR LA TABLA COMPRAR
+CREATE OR REPLACE FUNCTION Mostrar_Comprar
+(OUT runpaciente comprar.runpaciente%type,
+ OUT nombrecomermed comprar.nombrecomermed%type)
+RETURNS setof RECORD AS
+$$
+BEGIN
+	RETURN QUERY (select * from comprar);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--- PERMITE BUSCAR UNA COMPRA HECHA POR UN PACIENTE
+CREATE OR REPLACE FUNCTION Buscar_Comprar
+(IN run_pasado comprar.runpaciente%type,
+ OUT runpaciente comprar.runpaciente%type,
+ OUT nombrecomermed comprar.nombrecomermed%type)
+RETURNS setof RECORD AS
+$$
+BEGIN
+	RETURN QUERY (select comprar.runpaciente, comprar.nombrecomermed from comprar where run_pasado=comprar.runpaciente);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--- PERMITE INTERACTUAR CON LA TABLA SUPERVISOR
+--- INSERTA DATOS EN LA TABLA SUPERVISOR
+CREATE OR REPLACE FUNCTION Insertar_Supervisor
+(supervisor.run%type,
+ supervisor.nombre%type,
+ supervisor.apellido%type)
+RETURNS VOID AS
+$$
+BEGIN
+	INSERT INTO SUPERVISOR
+  (run,
+   nombre,
+   apellido) VALUES ($1,$2,$3);
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---BORRA DATOS DE LA TABLA SUPERVISOR
+CREATE OR REPLACE FUNCTION Borrar_Supervisor
+(supervisor.run%type)
+RETURNS VOID AS
+$$
+BEGIN
+	DELETE FROM supervisor WHERE supervisor.run=$1;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---MUESTRA DATOS DE LA TABLA SUPERVISOR
+CREATE OR REPLACE FUNCTION Mostrar_Supervisor
+(OUT run supervisor.run%type,
+ OUT nombre supervisor.nombre%type,
+ OUT apellido supervisor.apellido%type)
+RETURNS setof RECORD AS
+$$
+BEGIN
+	RETURN QUERY (SELECT * FROM supervisor);
+	RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--BUSCAR UN SUPERVISOR
+CREATE OR REPLACE FUNCTION Buscar_Supervisor
+(IN run_pasado supervisor.run%type,
+ OUT run supervisor.run%type,
+ OUT nombre supervisor.nombre%type,
+ OUT apellido supervisor.apellido%type)
+RETURNS setof RECORD AS
+$$
+BEGIN
+	RETURN QUERY (SELECT * FROM supervisor WHERE run_pasado=supervisor.run);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE INTERACTUAR CON LA TABLA PREVISION
+--- PERMITE INSERTAR DATOS EN LA TABLA PREVISION
+CREATE OR REPLACE FUNCTION Insertar_Prevision
+(prevision.nombre%type,
+ prevision.tipo%type)
+RETURNS VOID AS
+$$
+BEGIN
+	INSERT INTO prevision
+  (nombre,
+   tipo) VALUES ($1,$2);
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE BORRAR DATOS DE LA TABLA PREVISION
+CREATE OR REPLACE FUNCTION Borrar_Prevision
+(prevision.nombre%type)
+RETURNS VOID AS
+$$
+BEGIN
+	DELETE FROM prevision WHERE prevision.nombre=$1;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---MUESTRA LAS PREVISIONES
+CREATE OR REPLACE FUNCTION Mostrar_Prevision
+(OUT prevision prevision.nombre%type,
+ OUT tipo prevision.tipo%type)
+RETURNS SETOF RECORD AS
+$$
+BEGIN
+	RETURN QUERY (SELECT * FROM prevision);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---BUSCAR PREVISIONES
+CREATE OR REPLACE FUNCTION Buscar_Prevision
+(IN prevision_pasada prevision.nombre%type,
+ OUT nombre prevision.nombre%type,
+ OUT tipo prevision.tipo%type)
+RETURNS SETOF RECORD AS
+$$
+BEGIN
+	RETURN QUERY (SELECT * FROM prevision WHERE prevision_pasada=prevision.nombre);
+ 	RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE INTERACTUAR CON LA TABLA MEDICAMENTO
+---PERMITE INSERTAR UN NUEVO MEDICAMENTO NO CREA UNA EMPRESA FARMACEUTICA NUEVA
+CREATE OR REPLACE FUNCTION Insertar_Medicamento
+(medicamento.nombrecomercial%type,
+ medicamento.formula%type,
+ medicamento.codigoefarmaceutica%type)
+RETURNS VOID AS
+$$
+BEGIN 
+	INSERT INTO medicamento
+  (nombrecomercial,
+   formula,
+   codigoefarmaceutica) VALUES ($1,$2,$3);
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE BORRAR UN MEDICAMENTO
+CREATE OR REPLACE FUNCTION Borrar_Medicamento
+(medicamento.nombrecomercial%type)
+RETURNS VOID AS
+$$
+BEGIN
+	DELETE FROM medicamento WHERE medicamento.nombrecomercial=$1;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE VER LOS MEDICAMENTOS
+CREATE OR REPLACE FUNCTION Mostrar_Medicamentos
+(OUT nombrecomercial medicamento.nombrecomercial%type,
+ OUT formula medicamento.formula%type,
+ OUT codigoefarmaceutica medicamento.codigoefarmaceutica%type)
+RETURNS SETOF RECORD AS
+$$
+BEGIN
+	RETURN QUERY(SELECT * FROM medicamento);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE BUSCAR UN MEDICAMENTO
+CREATE OR REPLACE FUNCTION Buscar_Medicamento
+(IN medicamento_pasado medicamento.nombrecomercial%type,
+ OUT nombrecomercial medicamento.nombrecomercial%type,
+ OUT formula medicamento.formula%type,
+ OUT codigoefarmaceutica medicamento.codigoefarmaceutica%type)
+RETURNS SETOF RECORD AS
+$$
+BEGIN
+	RETURN QUERY(SELECT * FROM medicamento WHERE medicamento_pasado=medicamento.nombrecomercial);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE INTERACTUAR CON LA TABLA FARMACIA
+---PERMITE INGRESAR DATOS EN LA TABLA FARMACIA
+CREATE OR REPLACE FUNCTION Insertar_Farmacia
+(farmacia.codigo%type,
+ farmacia.nombre%type,
+ farmacia.telefono%type,
+ farmacia.direccion%type)
+RETURNS VOID AS
+$$
+BEGIN
+	INSERT INTO farmacia
+  (codigo,
+   nombre,
+   telefono,
+   direccion) VALUES ($1,$2,$3,$4);
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE BORRAR DATOS DE LA TABLA FARMACIA
+CREATE OR REPLACE FUNCTION Borrar_Farmacia
+(farmacia.codigo%type)
+RETURNS VOID AS
+$$
+BEGIN
+	DELETE FROM farmacia WHERE farmacia.codigo=$1;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE MOSTRAR LA TABLA FARMACIA
+CREATE OR REPLACE FUNCTION Mostrar_Farmacia
+(OUT codigo farmacia.codigo%type,
+ OUT nombre farmacia.nombre%type,
+ OUT telefono farmacia.telefono%type,
+ OUT direccion farmacia.direccion%type)
+RETURNS SETOF RECORD AS
+$$
+BEGIN
+	RETURN QUERY(SELECT * FROM farmacia);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--- PERMITE BUSCAR UNA FARMACIA DADO SU CODIGO
+CREATE OR REPLACE FUNCTION Buscar_Farmacia
+(IN codigo_pasado farmacia.codigo%type,
+ OUT codigo farmacia.codigo%type,
+ OUT nombre farmacia.nombre%type,
+ OUT telefono farmacia.telefono%type,
+ OUT direccion farmacia.direccion%type)
+RETURNS SETOF RECORD AS
+$$
+BEGIN
+	RETURN QUERY(SELECT * FROM farmacia WHERE farmacia.codigo=codigo_pasado);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE INTERACTUAR CON LA TABLA EXISTEEN
+--- PERMITE INSERTAR DATOS EN LA TABLA EXISTEEN
+CREATE OR REPLACE FUNCTION Insertar_ExisteEn
+(existeen.nombrecomermed%type,
+ existeen.codigofarmacia%type,
+ existeen.preciomed%type,
+ existeen.cantidadmed%type)
+RETURNS VOID AS
+$$
+BEGIN
+	INSERT INTO existeen
+  (nombrecomermed,
+   codigofarmacia,
+   preciomed,
+   cantidadmed,
+   preciooriginal,
+   fechainiciooferta,
+   fechafinoferta) VALUES ($1,$2,$3,$4,null,null,null);
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--PERMITE BORRAR DATOS DE LA TABLA EXISTEEN
+CREATE OR REPLACE FUNCTION Borrar_ExisteEn
+(existeen.nombrecomermed%type,
+ existeen.codigofarmacia%type)
+RETURNS VOID AS
+$$
+BEGIN
+	DELETE FROM existeen WHERE existeen.nombrecomermed=$1 and existeen.codigofarmacia=$2;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--- PERMITE MOSTRAR LA TABLA EXISTEEN
+CREATE OR REPLACE FUNCTION Mostrar_ExisteEn
+(OUT nombrecomermed existeen.nombrecomermed%type,
+ OUT codigofarmacia existeen.codigofarmacia%type,
+ OUT preciomed existeen.preciomed%type,
+ OUT cantidadmed existeen.cantidadmed%type,
+ OUT preciooriginal existeen.preciooriginal%type,
+ OUT fechainiciooferta existeen.fechainiciooferta%type,
+ OUT fechafinoferta existeen.fechafinoferta%type
+ )
+RETURNS SETOF RECORD AS
+$$
+BEGIN
+	RETURN QUERY(SELECT * FROM existeen);
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--- PERMITE BUSCAR EN LA TABLA EXISTEEN DADO EL NOMBRE DELMEDICAMENTO
+CREATE OR REPLACE FUNCTION Buscar_ExisteEn
+(IN nombre_pasado existeen.nombrecomermed%type,
+ OUT nombrecomermed existeen.nombrecomermed%type,
+ OUT codigofarmacia existeen.codigofarmacia%type,
+ OUT preciomed existeen.preciomed%type,
+ OUT cantidadmed existeen.cantidadmed%type,
+ OUT preciooriginal existeen.preciooriginal%type,
+ OUT fechainiciooferta existeen.fechainiciooferta%type,
+ OUT fechafinoferta existeen.fechafinoferta%type)
+RETURNS SETOF RECORD AS
+$$
+BEGIN
+	RETURN QUERY(SELECT * FROM existeen WHERE nombre_pasado=existeen.nombrecomermed);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--- PERMITE INTERACTUAR CON LA TABLA EMPRESAFARMACEUTICA
+
+-- INSERTA DATOS EN LA TABLA EMPRESA FARMACEUTICA
+CREATE OR REPLACE FUNCTION Insertar_EmpresaFarmaceutica
+(empresafarmaceutica.codigo%type,
+ empresafarmaceutica.nombre%type,
+ empresafarmaceutica.telefono%type)
+RETURNS VOID AS 
+$$
+BEGIN 
+	INSERT INTO empresafarmaceutica
+  (codigo,
+   nombre,
+   telefono) VALUES ($1,$2,$3);
+END;
+$$
+LANGUAGE PLPGSQL;
+
+-- BORRAR DATOS EN LA TABLA EMPRESAFARMACEUTICA
+CREATE OR REPLACE FUNCTION Borrar_EmpresaFarmaceutica
+(empresafarmaceutica.codigo%type)
+RETURNS VOID AS
+$$
+BEGIN
+	DELETE FROM empresafarmaceutica WHERE empresafarmaceutica.codigo=$1;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+-- MOSTRAR TABLA EMPRESAFARMACEUTICA
+CREATE OR REPLACE FUNCTION Mostrar_EmpresaFarmaceutica
+(OUT codigo empresafarmaceutica.codigo%type,
+ OUT nombre empresafarmaceutica.nombre%type,
+ OUT telefono empresafarmaceutica.telefono%type)
+RETURNS SETOF RECORD AS
+$$
+BEGIN
+	RETURN QUERY (SELECT * FROM empresafarmaceutica);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--BUSCAR EMPRESAFARMACEUTICA
+CREATE OR REPLACE FUNCTION Buscar_EmpresaFarmaceutica
+(IN codigo_pasado empresafarmaceutica.codigo%type,
+ OUT codigo empresafarmaceutica.codigo%type,
+ OUT nombre empresafarmaceutica.nombre%type,
+ OUT telefono empresafarmaceutica.telefono%type)
+RETURNS SETOF RECORD AS
+$$
+BEGIN
+	RETURN QUERY (SELECT * FROM empresafarmaceutica WHERE codigo_pasado=empresafarmaceutica.codigo);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---PERMITE INTERACTUAR CON LAS TABLAS CONTRATO Y FECHASUP
+--- PERMITE INSERTAR UN CONTRATO NUEVO
+CREATE OR REPLACE FUNCTION Insertar_Contrato
+(contrato.codigocontrato%type,
+ contrato.fechainicio%type,
+ contrato.fechatermino%type,
+ contrato.contenidocontrato%type,
+ contrato.codigoefarmaceutica%type,
+ contrato.codigofarmacia%type,
+ contrato.runsupervisor%type,
+ fechasup.fechainiciosupervision%type,
+ fechasup.fechaterminosupervision%type)
+RETURNS VOID AS
+$$
+BEGIN
+	IF NOT EXISTS(SELECT fechasup.runsupervisor from fechasup where fechasup.runsupervisor=$7) THEN
+  	INSERT INTO fechasup
+    (runsupervisor,
+     fechainiciosupervision,
+     fechaterminosupervision) VALUES ($7,$8,$9);
+  ELSE
+  	UPDATE fechasup
+  	SET fechainiciosupervision=$8, fechaterminosupervision=$9 WHERE runsupervisor=$7;
+  END IF;
+ 	
+  INSERT INTO contrato
+  (codigocontrato,
+   fechainicio,
+   fechatermino,
+   contenidocontrato,
+   codigoefarmaceutica,
+   codigofarmacia,
+   runsupervisor) VALUES ($1,$2,$3,$4,$5,$6,$7);
+  
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---BORRAR CONTRATO
+CREATE OR REPLACE FUNCTION Borrar_Contrato
+(contrato.codigocontrato%type,
+ contrato.runsupervisor%type)
+RETURNS VOID AS
+$$
+BEGIN
+	DELETE FROM contrato WHERE contrato.codigocontrato=$1;
+  DELETE FROM fechasup WHERE fechasup.runsupervisor=$2;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+--MOSTRAR CONTRATOS
+CREATE OR REPLACE FUNCTION Mostrar_Contratos
+(OUT codigocontrato contrato.codigocontrato%type,
+ OUT fechainicio contrato.fechainicio%type,
+ OUT fechatermino contrato.fechatermino%type,
+ OUT contenidocontrato contrato.contenidocontrato%type,
+ OUT codigoefarmaceutica contrato.codigoefarmaceutica%type,
+ OUT codigofarmacia contrato.codigofarmacia%type,
+ OUT runsupervisor contrato.runsupervisor%type,
+ OUT fechainiciosupervision fechasup.fechainiciosupervision%type,
+ OUT fechaterminosupervision fechasup.fechaterminosupervision%type)
+RETURNS SETOF RECORD AS
+$$
+BEGIN
+	RETURN QUERY (SELECT contrato.codigocontrato,
+ 											contrato.fechainicio,
+ 											contrato.fechatermino,
+ 											contrato.contenidocontrato,
+ 											contrato.codigoefarmaceutica,
+ 											contrato.codigofarmacia,
+ 											contrato.runsupervisor,
+ 											fechasup.fechainiciosupervision,
+ 											fechasup.fechaterminosupervision
+               FROM contrato, fechasup where contrato.runsupervisor=fechasup.runsupervisor);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+---BUSCAR CONTRATOS
+CREATE OR REPLACE FUNCTION Buscar_Contratos
+(IN codigo_pasado contrato.codigocontrato%type,
+ OUT codigocontrato contrato.codigocontrato%type,
+ OUT fechainicio contrato.fechainicio%type,
+ OUT fechatermino contrato.fechatermino%type,
+ OUT contenidocontrato contrato.contenidocontrato%type,
+ OUT codigoefarmaceutica contrato.codigoefarmaceutica%type,
+ OUT codigofarmacia contrato.codigofarmacia%type,
+ OUT runsupervisor contrato.runsupervisor%type,
+ OUT fechainiciosupervision fechasup.fechainiciosupervision%type,
+ OUT fechaterminosupervision fechasup.fechaterminosupervision%type)
+RETURNS SETOF RECORD AS
+$$
+BEGIN
+	RETURN QUERY (SELECT contrato.codigocontrato,
+ 											contrato.fechainicio,
+ 											contrato.fechatermino,
+ 											contrato.contenidocontrato,
+ 											contrato.codigoefarmaceutica,
+ 											contrato.codigofarmacia,
+ 											contrato.runsupervisor,
+ 											fechasup.fechainiciosupervision,
+ 											fechasup.fechaterminosupervision
+               FROM contrato, fechasup where contrato.runsupervisor=fechasup.runsupervisor and contrato.codigocontrato=codigo_pasado);
+  RETURN;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+-- CREATE OR REPLACE FUNCTION comprar_medicamentos
+-- (codigo_receta receta.codigo%type,
+--  cantidad INTEGER)
+-- RETURNS VOID AS
+-- $$
+-- BEGIN
+	 
+-- END;
+-- $$
+-- LANGUAGE PLPGSQL;

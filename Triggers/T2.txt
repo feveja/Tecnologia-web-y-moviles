@@ -1,0 +1,14 @@
+CREATE OR REPLACE FUNCTION verificar_medico_cabecera() 
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.runmedico <> (SELECT runmedico from paciente WHERE run = NEW.runpaciente) THEN
+    RAISE EXCEPTION 'El medico ingresado no es el medico de cabecera del paciente';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_verificar_medico_cabecera
+BEFORE INSERT OR UPDATE ON receta
+FOR EACH ROW
+EXECUTE FUNCTION verificar_medico_cabecera();

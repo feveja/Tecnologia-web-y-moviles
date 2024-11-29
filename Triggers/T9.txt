@@ -1,0 +1,47 @@
+CREATE OR REPLACE FUNCTION backup_contrato() RETURNS TRIGGER AS
+$$
+BEGIN
+    IF (TG_OP = 'DELETE') THEN
+        INSERT INTO AuditoriaContrato (operacion,
+                                       fecharespaldo,
+                                       usuario,
+                                       codigocontrato,
+                                       fechainicio,
+                                       fechatermino,
+                                       contenidocontrato,
+                                       codigoefarmaceutica,
+                                       codigofarmacia,
+                                       runsupervisor) SELECT 'DELETE', CURRENT_TIMESTAMP, user, OLD.*;
+        RETURN OLD;
+    ELSEIF (TG_OP = 'UPDATE') THEN
+        INSERT INTO AuditoriaContrato (operacion,
+                                       fecharespaldo,
+                                       usuario,
+                                       codigocontrato,
+                                       fechainicio,
+                                       fechatermino,
+                                       contenidocontrato,
+                                       codigoefarmaceutica,
+                                       codigofarmacia,
+                                       runsupervisor) SELECT 'UPDATE', CURRENT_TIMESTAMP, user, NEW.*;
+        RETURN NEW;
+    ELSEIF (TG_OP = 'INSERT') THEN
+        INSERT INTO AuditoriaContrato (operacion,
+                                       fecharespaldo,
+                                       usuario,
+                                       codigocontrato,
+                                       fechainicio,
+                                       fechatermino,
+                                       contenidocontrato,
+                                       codigoefarmaceutica,
+                                       codigofarmacia,
+                                       runsupervisor) SELECT 'INSERT', CURRENT_TIMESTAMP, user, NEW.*;
+        RETURN NEW;
+    END IF;
+END;
+$$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trigger_respaldo_contrato
+AFTER INSERT OR UPDATE OR DELETE ON contrato
+FOR EACH ROW EXECUTE PROCEDURE backup_contrato();

@@ -1,0 +1,158 @@
+DROP FUNCTION IF EXISTS validar_rut;
+-- modo=1 verificar
+-- modo=0 corregir
+CREATE FUNCTION validar_rut (RUT VARCHAR(10), modo integer)
+RETURNS TEXT AS
+$$
+DECLARE
+  longitud INTEGER;
+  i INTEGER = 1;
+  j INTEGER = 2;
+  suma INTEGER = 0;
+  aux VARCHAR(10);
+  digito_verificar TEXT;
+  digito_ingresado VARCHAR(1);
+BEGIN
+-- elimina el guion
+    RUT := REPLACE(RUT, '-', '');
+-- obtiene el digito verificador ingresado por el usuario
+    digito_ingresado := RIGHT(RUT,1);
+-- quita el digito verificador del ingresado por el usuario
+    RUT := SUBSTR(RUT,1,LENGTH(RUT)-1);
+    longitud := LENGTH(RUT);
+    IF longitud = 8 OR longitud = 7 THEN
+        aux := REVERSE(RUT);
+        WHILE i <= LENGTH(aux) LOOP
+            suma := suma + (CAST(SUBSTRING(aux, i, 1) AS INTEGER) * j);
+            i := i + 1;
+            IF j = 7 THEN
+                j := 2;
+            ELSE
+                j := j + 1;
+            END IF;
+        END LOOP;
+  	    digito_verificar := CAST((11 - suma%11) AS TEXT);
+        IF digito_verificar = '11' THEN
+            digito_verificar := '0';
+        ELSEIF digito_verificar = '10' THEN
+            digito_verificar := 'K';
+        END IF;
+        IF modo = 1 THEN
+            IF digito_ingresado = digito_verificar THEN
+                RETURN 1;
+            ELSE
+                RETURN 0;
+            END IF;
+        ELSEIF modo =0 THEN
+            RETURN digito_verificar;
+        END IF;
+	END IF;
+	RETURN 0;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+
+CREATE OR REPLACE FUNCTION verificar_rut_valido1()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF validar_rut(NEW.runpaciente,1) = '0' THEN
+    		NEW.runpaciente := LEFT(NEW.runpaciente,LENGTH(NEW.runpaciente)-1) || validar_rut(NEW.runpaciente,0);
+    END IF;
+    RETURN NEW;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION verificar_rut_valido2()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF validar_rut(NEW.run,1) = '0' THEN
+    		NEW.run := LEFT(NEW.run,LENGTH(NEW.run)-1) || validar_rut(NEW.run,0);
+    END IF;
+    RETURN NEW;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION verificar_rut_valido3()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF validar_rut(NEW.runmedico,1) = '0' THEN
+    		NEW.runmedico := LEFT(NEW.runmedico,LENGTH(NEW.runmedico)-1) || validar_rut(NEW.runmedico,0);
+    END IF;
+    RETURN NEW;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION verificar_rut_valido4()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF validar_rut(NEW.runsupervisor,1) = '0' THEN
+    		NEW.runsupervisor := LEFT(NEW.runsupervisor,LENGTH(NEW.runsupervisor)-1) || validar_rut(NEW.runsupervisor,0);
+    END IF;
+    RETURN NEW;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+CREATE OR REPLACE FUNCTION verificar_rut_valido_paciente()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF validar_rut(NEW.run,1) = '0' THEN
+    		NEW.run := LEFT(NEW.run,LENGTH(NEW.run)-1) || validar_rut(NEW.run,0);
+    END IF;
+    IF validar_rut(NEW.runmedico,1) = '0' THEN
+    		NEW.run := LEFT(NEW.runmedico,LENGTH(NEW.runmedico)-1) || validar_rut(NEW.runmedico,0);
+    END IF;
+    RETURN NEW;
+END;
+$$
+LANGUAGE PLPGSQL;
+
+
+CREATE OR REPLACE TRIGGER trigger_verificar_rut_valido_tiene
+BEFORE INSERT OR UPDATE ON tiene
+FOR EACH ROW
+EXECUTE FUNCTION verificar_rut_valido1();
+
+CREATE OR REPLACE TRIGGER trigger_verificar_rut_valido_comprar
+BEFORE INSERT OR UPDATE ON comprar
+FOR EACH ROW
+EXECUTE FUNCTION verificar_rut_valido1();
+
+CREATE OR REPLACE TRIGGER trigger_verificar_rut_valido_medico
+BEFORE INSERT OR UPDATE ON medico
+FOR EACH ROW
+EXECUTE FUNCTION verificar_rut_valido2();
+
+CREATE OR REPLACE TRIGGER trigger_verificar_rut_valido_posee
+BEFORE INSERT OR UPDATE ON posee
+FOR EACH ROW
+EXECUTE FUNCTION verificar_rut_valido3();
+
+CREATE OR REPLACE TRIGGER trigger_verificar_rut_valido_contrato
+BEFORE INSERT OR UPDATE ON contrato
+FOR EACH ROW
+EXECUTE FUNCTION verificar_rut_valido4();
+
+CREATE OR REPLACE TRIGGER trigger_verificar_rut_valido_supervisor
+BEFORE INSERT OR UPDATE ON supervisor
+FOR EACH ROW
+EXECUTE FUNCTION verificar_rut_valido2();
+
+CREATE OR REPLACE TRIGGER trigger_verificar_rut_valido_fechasup
+BEFORE INSERT OR UPDATE ON fechasup
+FOR EACH ROW
+EXECUTE FUNCTION verificar_rut_valido4();
+
+CREATE OR REPLACE TRIGGER trigger_verificar_rut_valido_paciente
+BEFORE INSERT OR UPDATE ON paciente
+FOR EACH ROW
+EXECUTE FUNCTION verificar_rut_valido_paciente();
+
+CREATE OR REPLACE TRIGGER trigger_verificar_rut_valido_receta
+BEFORE INSERT OR UPDATE ON receta
+FOR EACH ROW
+EXECUTE FUNCTION verificar_rut_valido_paciente();

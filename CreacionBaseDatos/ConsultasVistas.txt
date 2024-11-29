@@ -1,0 +1,74 @@
+--- CONSULTAS
+--- Q1
+select receta.runpaciente as Run_Paciente, paciente.nombre as Nombre_Paciente,
+medico.run as Run_Medico, medico.nombre as Nombre_Medico, receta.fecha as Fecha_Receta, 
+farmacia.nombre as Nombre_Farmacia, contiene.nombrecomermed as Nombre_Medicamento, existeen.preciomed as Precio_Medicamento
+from receta, contiene, farmacia, existeen, paciente, medico
+where (receta.runpaciente=paciente.run)
+and (paciente.runmedico=medico.run)
+and (receta.codigo = contiene.codigoreceta) 
+and (existeen.nombrecomermed = contiene.nombrecomermed)
+and (farmacia.codigo = existeen.codigofarmacia);
+
+--- Q2
+select pa.run, pa.nombre, pa.apellido, es.nombre, count(*) as atenciones
+from paciente pa, medico me, posee po, especialidad es
+where 
+es.nombre=po.nombreespecialidad 
+and me.run=po.runmedico
+and pa.runmedico=me.run
+group by pa.run, pa.nombre, pa.apellido, es.nombre;
+
+--- Q3
+--muestra contratos vigentes
+create or replace view Contratos_Vigentes as
+select con.codigofarmacia, ef.codigo as codigofarmaceutica, con.codigocontrato
+from farmacia f, empresafarmaceutica ef, contrato con
+where con.codigoefarmaceutica=ef.codigo and con.codigofarmacia=f.codigo and (con.fechatermino>=CURRENT_DATE);
+
+--- muestra farmacias con contratos no vigentes
+select f.codigo, f.nombre, f.direccion, f.telefono
+from farmacia f, medicamento med, existeen ex, empresafarmaceutica ef
+where f.codigo NOT IN (select cv.codigofarmacia from Contratos_Vigentes cv) 
+and f.codigo=ex.codigofarmacia
+and ex.nombrecomermed=med.nombrecomercial
+and med.codigoefarmaceutica=ef.codigo;
+
+--- Q4
+select sup.nombre as nombre_supervisor, f.nombre as nombre_farmacia, ef.nombre as nombre_empresa_farmaceutica, count(*) as veces_supervisado
+from supervisor sup, farmacia f, empresafarmaceutica ef, contrato con, fechasup fsup
+where sup.run = fsup.runsupervisor and fsup.runsupervisor=con.runsupervisor and
+con.codigofarmacia=f.codigo and con.codigoefarmaceutica=ef.codigo
+group by nombre_supervisor, nombre_farmacia, nombre_empresa_farmaceutica
+order by nombre_supervisor;
+
+--- Q5
+select ef.nombre as nombre_empresa_farmaceutica,m.nombrecomercial as nombre_medicamento, count(c.codigoreceta) as cantidad_recetas
+from medicamento m, empresafarmaceutica ef, contiene c
+where m.codigoefarmaceutica = ef.codigo and m.nombrecomercial = c.nombrecomermed
+group by ef.nombre, m.nombrecomercial
+having count(c.codigoreceta) > 10;
+
+--- VISTAS
+--- V1
+create or replace view v1 as
+select me.*
+from medico me
+where me.run not in 
+(select me.run
+from medico me, receta re
+where me.run=re.runmedico and date_part('month',re.fecha)=date_part('month',now()) and date_part('year',re.fecha)=date_part('year',now()));
+
+--- V2
+create or replace view v2 as
+select me.run as run_medico, date_part('year',re.fecha) as anio_recetas, count(*) as total_recetas
+from medico me, receta re
+where re.runmedico=me.run
+group by me.run, date_part('year',re.fecha);
+
+--- V3
+create view v3 as 
+select p.nombre as nombre_paciente, m.nombre as nombre_medico, r.fecha as anio, count(*) as total_recetas
+from medico m, receta r, paciente p
+where m.run = r.runmedico and r.runpaciente = p.run
+group by p.nombre,m.nombre,r.fecha;
