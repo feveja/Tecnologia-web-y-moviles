@@ -1,0 +1,194 @@
+-- Creación de la tabla Prevision
+CREATE TABLE Prevision (
+    nombre TEXT PRIMARY KEY,
+    tipo TEXT
+);
+
+-- Creación de la tabla Direccion
+CREATE TABLE Direccion (
+    codigopostal INTEGER PRIMARY KEY,
+    calle TEXT,
+    numero INTEGER,
+    comuna TEXT
+);
+
+-- Creación de la tabla Telefono
+CREATE TABLE Telefono (
+    codigo INTEGER PRIMARY KEY AUTOINCREMENT,
+    numero INTEGER
+);
+
+-- Creación de la tabla Tiene
+CREATE TABLE Tiene (
+    runpaciente TEXT,
+    codigotelefono INTEGER,
+    codigodireccion INTEGER,
+    PRIMARY KEY (runpaciente, codigotelefono),
+    FOREIGN KEY (codigodireccion) REFERENCES Direccion (codigopostal) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (codigotelefono) REFERENCES Telefono (codigo) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Creación de la tabla Medico
+CREATE TABLE Medico (
+    run TEXT PRIMARY KEY,
+    fechanacimiento TEXT,
+    aniosejerciendo INTEGER,
+    nombre TEXT,
+    apellido TEXT
+);
+
+-- Creación de la tabla Paciente
+CREATE TABLE Paciente (
+    run TEXT PRIMARY KEY,
+    fechanacimiento TEXT,
+    correo TEXT,
+    nombre TEXT,
+    apellido TEXT,
+    fechainicioacargo TEXT,
+    fechaterminoacargo TEXT,
+    nombreprevision TEXT,
+    runmedico TEXT,
+    FOREIGN KEY (nombreprevision) REFERENCES Prevision (nombre) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (runmedico) REFERENCES Medico (run) ON DELETE CASCADE ON UPDATE CASCADE,
+    CHECK (fechainicioacargo > '1950-01-01' AND fechainicioacargo < DATE('now') AND fechaterminoacargo > '1950-01-01')
+);
+
+-- Creación de la tabla Especialidad
+CREATE TABLE Especialidad (
+    nombre TEXT PRIMARY KEY
+);
+
+-- Creación de la tabla Posee
+CREATE TABLE Posee (
+    runmedico TEXT,
+    nombreespecialidad TEXT,
+    PRIMARY KEY (runmedico, nombreespecialidad),
+    FOREIGN KEY (nombreespecialidad) REFERENCES Especialidad (nombre),
+    FOREIGN KEY (runmedico) REFERENCES Medico (run)
+);
+
+-- Creación de la tabla Receta
+CREATE TABLE Receta (
+    codigo INTEGER PRIMARY KEY AUTOINCREMENT,
+    fecha TEXT,
+    texto TEXT,
+    runpaciente TEXT,
+    runmedico TEXT,
+    FOREIGN KEY (runmedico) REFERENCES Medico (run) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (runpaciente) REFERENCES Paciente (run) ON DELETE CASCADE ON UPDATE CASCADE,
+    CHECK (fecha > '1950-01-01' AND fecha < DATE('now'))
+);
+
+-- Creación de la tabla EmpresaFarmaceutica
+CREATE TABLE EmpresaFarmaceutica (
+    codigo INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT,
+    telefono INTEGER
+);
+
+-- Creación de la tabla Medicamento
+CREATE TABLE Medicamento (
+    nombrecomercial TEXT PRIMARY KEY,
+    formula TEXT,
+    codigoefarmaceutica INTEGER,
+    FOREIGN KEY (codigoefarmaceutica) REFERENCES EmpresaFarmaceutica (codigo) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Creación de la tabla Contiene
+CREATE TABLE Contiene (
+    codigoreceta INTEGER,
+    nombrecomermed TEXT,
+    PRIMARY KEY (codigoreceta, nombrecomermed),
+    FOREIGN KEY (codigoreceta) REFERENCES Receta (codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (nombrecomermed) REFERENCES Medicamento (nombrecomercial) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Creación de la tabla Comprar
+CREATE TABLE Comprar (
+    runpaciente TEXT,
+    nombrecomermed TEXT,
+    PRIMARY KEY (runpaciente, nombrecomermed),
+    FOREIGN KEY (nombrecomermed) REFERENCES Medicamento (nombrecomercial) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (runpaciente) REFERENCES Paciente (run) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Creación de la tabla Farmacia
+CREATE TABLE Farmacia (
+    codigo INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT,
+    telefono INTEGER,
+    direccion TEXT
+);
+
+-- Creación de la tabla ExisteEn
+CREATE TABLE ExisteEn (
+    nombrecomermed TEXT,
+    codigofarmacia INTEGER,
+    preciomed INTEGER,
+    cantidadmed INTEGER,
+    preciooriginal INTEGER,
+    fechainiciooferta TEXT,
+    fechafinoferta TEXT,
+    PRIMARY KEY (nombrecomermed, codigofarmacia),
+    FOREIGN KEY (codigofarmacia) REFERENCES Farmacia (codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (nombrecomermed) REFERENCES Medicamento (nombrecomercial) ON DELETE CASCADE ON UPDATE CASCADE,
+    CHECK (preciomed < 100000)
+);
+
+-- Creación de la tabla Supervisor
+CREATE TABLE Supervisor (
+    run TEXT PRIMARY KEY,
+    nombre TEXT,
+    apellido TEXT
+);
+
+-- Creación de la tabla FechaSup
+CREATE TABLE FechaSup (
+    runsupervisor TEXT PRIMARY KEY,
+    fechainiciosupervision TEXT,
+    fechaterminosupervision TEXT,
+    FOREIGN KEY (runsupervisor) REFERENCES Supervisor (run) ON DELETE CASCADE ON UPDATE CASCADE,
+    CHECK (fechainiciosupervision > '1950-01-01' AND fechainiciosupervision < DATE('now') AND fechaterminosupervision > '1950-01-01')
+);
+
+-- Creación de la tabla Contrato
+CREATE TABLE Contrato (
+    codigocontrato INTEGER PRIMARY KEY AUTOINCREMENT,
+    fechainicio TEXT,
+    fechatermino TEXT,
+    contenidocontrato TEXT,
+    codigoefarmaceutica INTEGER,
+    codigofarmacia INTEGER,
+    runsupervisor TEXT,
+    FOREIGN KEY (codigoefarmaceutica) REFERENCES EmpresaFarmaceutica (codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (codigofarmacia) REFERENCES Farmacia (codigo) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (runsupervisor) REFERENCES FechaSup (runsupervisor) ON DELETE CASCADE ON UPDATE CASCADE,
+    CHECK (fechainicio > '1950-01-01' AND fechainicio < DATE('now') AND fechatermino > '1950-01-01')
+);
+
+-- Creación de la tabla AuditoriaContrato
+CREATE TABLE AuditoriaContrato (
+    codigooperacion INTEGER PRIMARY KEY AUTOINCREMENT,
+    operacion TEXT,
+    fecharespaldo TEXT,
+    usuario TEXT,
+    codigocontrato INTEGER,
+    fechainicio TEXT,
+    fechatermino TEXT,
+    contenidocontrato TEXT,
+    codigoefarmaceutica INTEGER,
+    codigofarmacia INTEGER,
+    runsupervisor TEXT
+);
+
+-- Creación de la tabla Comprar2
+CREATE TABLE Comprar2 (
+    codigo_compra INTEGER PRIMARY KEY AUTOINCREMENT,
+    codigo_e INTEGER,
+    codigo_f INTEGER, 
+    fecha_compra TEXT,
+    monto REAL,
+    descuento REAL DEFAULT 0,
+    FOREIGN KEY (codigo_e) REFERENCES EmpresaFarmaceutica (codigo),
+    FOREIGN KEY (codigo_f) REFERENCES Farmacia (codigo)
+);
