@@ -15,7 +15,7 @@
 	<body>
 		<img src="../../images/logo.png" class="logo">
 		<ul id="menuprincipal">
-			<li id="elementosmenu"><a href="../../home-admin.php"> <span class="material-symbols-outlined">home</span>Inicio</a></li>
+			<li id="elementosmenu"><a href="../../home-admin.html"> <span class="material-symbols-outlined">home</span>Inicio</a></li>
 			<li id="dropdown">
 				<a href="javascript:void(0)" id="dropbtn"> <span class="material-symbols-outlined">app_registration</span>Registrar</a>
 				<div id="dropdown-content">
@@ -32,6 +32,10 @@
 					<a href="../registrar/registrar-empresafarmaceutica.php"> <span class="material-symbols-outlined">vaccines</span>Empresa farmaceutica</a>
 					<a href="../registrar/registrar-contrato.php"> <span class="material-symbols-outlined">contract</span>Contrato</a>
 				</div>
+			</li>
+
+			<li id="elementosmenu">
+			<a href="../modificar/modificar-seleccion.php"> <span class="material-symbols-outlined">edit</span>Modificar</a>
 			</li>
 
 			<li id="dropdown">
@@ -67,10 +71,10 @@
 					<a href="mostrar-contrato.php"> <span class="material-symbols-outlined">contract</span>Contrato</a>
 				</div>				
 			</li>
-			<li id="elementosmenu"><a href="../../home-admin-ofertas.php"><span class="material-symbols-outlined"> paid</span>Modificar ofertas</a></li>
-			<li id="elementosmenu"><a href="../../home-admin-consultas.php"><span class="material-symbols-outlined">assignment_late</span>Consultas</a></li>
-            <li id="elementosmenu"><a href="home-modelorelacional.php"><span class="material-symbols-outlined">database</span>Modelo relacional</a></li>
-            <li id="elementosmenu"><a href="../../login.php"><span class="material-symbols-outlined">logout</span>Cerrar sesion</a> </li>
+			<li id="elementosmenu"><a href="../../home-admin-ofertas.html"><span class="material-symbols-outlined"> paid</span>Modificar ofertas</a></li>
+			<li id="elementosmenu"><a href="../../home-admin-consultas.html"><span class="material-symbols-outlined">assignment_late</span>Consultas</a></li>
+            <li id="elementosmenu"><a href="../../home-modelorelacional.html"><span class="material-symbols-outlined">database</span>Modelo relacional</a></li>
+            <li id="elementosmenu"><a href="../../index.php"><span class="material-symbols-outlined">logout</span>Cerrar sesion</a> </li>
 		</ul>
 	<div id="contenido">
 		<h3>Datos contrato</h3>
@@ -89,10 +93,10 @@
 					Contenido contrato
 				</th>
 				<th>
-					Codigo empresa farmaceutica
+					(Codigo) Empresa Farmaceutica
 				</th>
 				<th>
-					Codigo farmacia
+					(Codigo) Farmacia
 				</th>
 				<th>
 					RUN Supervisor
@@ -106,16 +110,18 @@
 			</tr>
 			<?php 
 				while ($contenido = pg_fetch_assoc($consulta)){
+					$nombrefarmacia = pg_fetch_assoc(pg_exec("select nombre from farmacia where codigo=".$contenido['codigofarmacia'].""))['nombre'];
+					$nombreempresa = pg_fetch_assoc(pg_exec("select nombre from empresafarmaceutica where codigo=".$contenido['codigoefarmaceutica'].""))['nombre'];
 					echo "<tr> 
 						<td>".$contenido['codigocontrato']."</td>
-						<td>".$contenido['fechainicio']."</td>
-						<td>".$contenido['fechatermino']."</td>
+						<td>".date("d-m-Y", strtotime($contenido['fechainicio']))."</td>
+						<td>".date("d-m-Y", strtotime($contenido['fechatermino']))."</td>
 						<td>".ucfirst($contenido['contenidocontrato'])."</td>
-						<td>".$contenido['codigoefarmaceutica']."</td>
-						<td>".$contenido['codigofarmacia']."</td>
+						<td>(".$contenido['codigoefarmaceutica'].") ".ucwords($nombreempresa)."</td>
+						<td>(".$contenido['codigofarmacia'].") ".ucwords($nombrefarmacia)."</td>
 						<td>".$contenido['runsupervisor']."</td>
-						<td>".$contenido['fechainiciosupervision']."</td>
-						<td>".$contenido['fechaterminosupervision']."</td>
+						<td>".date("d-m-Y", strtotime($contenido['fechainiciosupervision']))."</td>
+						<td>".date("d-m-Y", strtotime($contenido['fechaterminosupervision']))."</td>
 						</tr>";
 				}
 			?>

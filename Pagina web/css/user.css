@@ -1,0 +1,144 @@
+
+.logo {
+	width: 100px;
+}
+.avatar {
+	width: 100px;
+	vertical-align: middle;
+}
+span.material-symbols-outlined {
+	font-size:20px;
+	font-variation-settings: 'OPSZ' 20;
+	vertical-align: -4px;
+	display: inline-flex;
+}
+
+li#elementosmenu {
+	vertical-align: middle;
+}
+
+body {
+	background-color: #65c1ed;
+	text-align: center;
+	font-family: Arial;
+}
+
+ul#menuprincipal{
+	position: sticky;
+	top:0;
+	list-style-type: none;
+	margin: 0;
+	padding: 0;
+	min-height: 48px;
+	background-color: #00acff;
+	border-radius: 15px;
+}
+  
+li {
+	float: left;
+}
+  
+li a, a#dropbtn {
+	display: inline-block;
+	color: #032c4a;
+	text-align: center;
+	padding: 14px 16px;
+	text-decoration: none;
+}
+  
+li a:hover, li#dropdown:hover a#dropbtn {
+	background-color: #032c4a;
+	color: #FFFFFF;
+	border-radius: 15px;
+}
+  
+li#dropdown {
+	display: inline-block;
+}
+  
+div#dropdown-content {
+	display: none;
+	position: absolute;
+	background-color: #032c4a;
+	min-width: 160px;
+	box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+	z-index: 1;
+	border-radius: 15px;
+}
+  
+div#dropdown-content a {
+	color: #FFFFFF;
+	padding: 12px 16px;
+	text-decoration: none;
+	display: block;
+	text-align: left;
+}
+  
+div#dropdown-content a:hover {
+	background-color: #f1f1f1;
+	color: #032c4a;
+}
+  
+li#dropdown:hover div#dropdown-content {
+	display: block;
+}
+
+div#contenido {
+	background-color: #FFFFFF;
+	border-radius: 25px;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	padding: 20px;
+}
+
+
+footer {
+	color: aliceblue;
+}
+
+div#cajabotonesconsultas {
+	background-color: #00acff;
+	margin: auto;
+	width: 250px;
+	line-height: 50px;
+	border-radius: 15px;
+	padding: 10px;
+}
+
+div#cajabotonesofertas {
+	background-color: #00acff;
+	margin: auto;
+	width: 200px;
+	line-height: 50px;
+	border-radius: 15px;
+	padding: 10px;
+}
+
+a#botonesconsultas {
+	border-radius: 10px;
+	text-decoration-line: none;
+	padding: 10px;
+	color: #032c4a;
+}
+
+a#botonesconsultas:hover {
+	background-color: #032c4a;
+	color: #FFFFFF;
+}
+
+table, th, td {
+	border-color: #032c4a;
+	border: 1px solid;
+	border-collapse: collapse;
+}
+
+table {
+	margin: auto;
+}
+
+
+tr:hover {
+	background-color: #032c4a;
+	color: #FFFFFF;
+}
+
